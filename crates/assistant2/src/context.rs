@@ -2,7 +2,6 @@ use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use collections::BTreeMap;
 use gpui::{AppContext, Model, SharedString};
 use language::Buffer;
 use language_model::{LanguageModelRequestMessage, MessageContent};
@@ -60,27 +59,18 @@ impl Context {
     }
 }
 
-// TODO: Model<Buffer> holds onto the buffer even if the file is deleted and closed. Should remove
-// the context from the message editor in this case.
-
 #[derive(Debug)]
 pub struct FileContext {
     pub id: ContextId,
-    pub buffer: Model<Buffer>,
-    #[allow(unused)]
-    pub version: clock::Global,
-    pub text: SharedString,
+    pub buffer: ContextBuffer,
 }
 
 #[derive(Debug)]
 pub struct DirectoryContext {
     #[allow(unused)]
     pub path: Rc<Path>,
-    // TODO: The choice to make this a BTreeMap was a result of use in a version of
-    // ContextStore::will_include_buffer before I realized that the path logic should be used there
-    // too.
     #[allow(unused)]
-    pub buffers: BTreeMap<BufferId, (Model<Buffer>, clock::Global)>,
+    pub buffers: Vec<ContextBuffer>,
     pub snapshot: ContextSnapshot,
 }
 
@@ -101,6 +91,19 @@ pub struct ThreadContext {
     pub text: SharedString,
 }
 
+// TODO: Model<Buffer> holds onto the buffer even if the file is deleted and closed. Should remove
+// the context from the message editor in this case.
+
+#[derive(Debug)]
+pub struct ContextBuffer {
+    #[allow(unused)]
+    pub id: BufferId,
+    pub buffer: Model<Buffer>,
+    #[allow(unused)]
+    pub version: clock::Global,
+    pub text: SharedString,
+}
+
 impl Context {
     pub fn snapshot(&self, cx: &AppContext) -> Option<ContextSnapshot> {
         match &self {
@@ -114,7 +117,7 @@ impl Context {
 
 impl FileContext {
     pub fn path(&self, cx: &AppContext) -> Option<Arc<Path>> {
-        let buffer = self.buffer.read(cx);
+        let buffer = self.buffer.buffer.read(cx);
         if let Some(file) = buffer.file() {
             Some(file.path().clone())
         } else {
@@ -141,7 +144,7 @@ impl FileContext {
             parent,
             tooltip: Some(full_path),
             kind: ContextKind::File,
-            text: self.text.clone(),
+            text: self.buffer.text.clone(),
         })
     }
 }
