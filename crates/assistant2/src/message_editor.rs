@@ -148,9 +148,10 @@ impl MessageEditor {
             text
         });
 
+        let context = self.context_store.read(cx).snapshot(cx).collect::<Vec<_>>();
+
         let thread = self.thread.clone();
         thread.update(cx, |thread, cx| {
-            let context = self.context_store.read(cx).snapshot(cx).collect::<Vec<_>>();
             thread.insert_user_message(user_message, context, cx);
             let mut request = thread.to_completion_request(request_kind, cx);
 

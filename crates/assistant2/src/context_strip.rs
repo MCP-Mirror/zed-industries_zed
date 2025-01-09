@@ -139,11 +139,7 @@ impl ContextStrip {
 impl Render for ContextStrip {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let context_store = self.context_store.read(cx);
-        let context = context_store
-            .context()
-            .iter()
-            .flat_map(|context| context.snapshot(cx))
-            .collect::<Vec<_>>();
+        let context = context_store.snapshot(cx).collect::<Vec<_>>();
         let context_picker = self.context_picker.clone();
         let focus_handle = self.focus_handle.clone();
 

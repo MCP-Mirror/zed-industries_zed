@@ -25,6 +25,7 @@ pub struct ContextStore {
     directories: HashMap<PathBuf, ContextId>,
     threads: HashMap<ThreadId, ContextId>,
     fetched_urls: HashMap<String, ContextId>,
+    refresh_tasks: BTreeMap<ContextId, Task<()>>,
 }
 
 impl ContextStore {
@@ -44,13 +45,7 @@ impl ContextStore {
         &'a self,
         cx: &'a AppContext,
     ) -> impl Iterator<Item = ContextSnapshot> + 'a {
-        self.context()
-            .iter()
-            .flat_map(|context| context.snapshot(cx))
-    }
-
-    pub fn context(&self) -> &Vec<Context> {
-        &self.context
+        self.context.iter().flat_map(|context| context.snapshot(cx))
     }
 
     pub fn clear(&mut self) {
@@ -349,6 +344,14 @@ impl ContextStore {
 
     pub fn includes_url(&self, url: &str) -> Option<ContextId> {
         self.fetched_urls.get(url).copied()
+    }
+
+    pub fn refresh_context(&self, cx: &AppContext) {
+        self.context.iter().for_each(|context| {
+            if self
+                cx.notify();
+            }
+        })
     }
 }
 
